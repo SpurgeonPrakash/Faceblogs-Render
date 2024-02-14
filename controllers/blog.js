@@ -7,6 +7,8 @@ const User = require("../models/user");
 const Series = require("../models/series");
 const Comment = require("../models/comments");
 const { validationResult } = require("express-validator");
+const uploadImagesToCloudinary = require("../util/cloudinary");
+const fs = require("fs");
 
 exports.getIndex = async (req, res, next) => {
   let finalPosts = [];
@@ -409,7 +411,7 @@ exports.postCreatePost = async (req, res, next) => {
   const userSeries = await Series.find({ creator: req.user._id });
 
   const errors = validationResult(req);
-  console.log(errors.errors);
+  // console.log(errors.errors);
   if (!errors.isEmpty()) {
     return res.status(200).render("blog/add-post", {
       pageTitle: "Create New Post",
@@ -446,7 +448,56 @@ exports.postCreatePost = async (req, res, next) => {
           throw error;
         }
         if (req.file) {
-          let imageUrl = req.file.path;
+          const imagePath = req.file.path;
+
+          // let imageUrl;
+
+          uploadImagesToCloudinary(imagePath, "FaceBlogsPostsImages")
+            .then((imgUrl) => {
+              fs.unlink(imagePath, (err) => {
+                if (err) {
+                  console.log(err);
+                }
+              });
+
+              post = new Post({
+                title,
+                description,
+                coverImgUrl: imgUrl.imageUrl,
+                creator: req.user._id,
+                publish,
+              });
+              post
+                .save()
+                .then((post) => {
+                  user.posts.push(post._id);
+                  user
+                    .save()
+                    .then((user) => {
+                      res.status(200).redirect("/blog/post/" + post._id);
+                    })
+                    .catch((err) => {
+                      console.log(err);
+                      if (!err.statusCode) {
+                        err.statusCode = 500;
+                      }
+                      next(err);
+                    });
+                })
+                .catch((err) => {
+                  console.log(err);
+                  if (!err.statusCode) {
+                    err.statusCode = 500;
+                  }
+                  next(err);
+                });
+            })
+            .catch((err) => {
+              if (!err.statusCode) {
+                err.statusCode = 500;
+              }
+              next(err);
+            });
 
           // const s3 = new AWS.S3({
           //   accessKeyId: process.env.AWS_ACCESS_KEY,
@@ -474,37 +525,7 @@ exports.postCreatePost = async (req, res, next) => {
           //   // imageUrl = `/img/${data.Key}`;
 
           // });
-          post = new Post({
-            title,
-            description,
-            coverImgUrl: imageUrl,
-            creator: req.user._id,
-            publish,
-          });
-          post
-            .save()
-            .then((post) => {
-              user.posts.push(post._id);
-              user
-                .save()
-                .then((user) => {
-                  res.status(200).redirect("/blog/post/" + post._id);
-                })
-                .catch((err) => {
-                  console.log(err);
-                  if (!err.statusCode) {
-                    err.statusCode = 500;
-                  }
-                  next(err);
-                });
-            })
-            .catch((err) => {
-              console.log(err);
-              if (!err.statusCode) {
-                err.statusCode = 500;
-              }
-              next(err);
-            });
+
           // console.log(req.file);
         } else {
           post = new Post({
@@ -587,7 +608,81 @@ exports.postCreatePost = async (req, res, next) => {
                 }
                 if (!isSeriesExists) {
                   if (req.file) {
-                    let imageUrl = req.file.path;
+                    const imagePath = req.file.path;
+
+                    uploadImagesToCloudinary(imagePath, "FaceBlogsPostsImages")
+                      .then((imgUrl) => {
+                        fs.unlink(imagePath, (err) => {
+                          if (err) {
+                            console.log(err);
+                          }
+                        });
+
+                        post = new Post({
+                          title,
+                          description,
+                          coverImgUrl: imgUrl.imageUrl,
+                          creator: req.user._id,
+                          publish,
+                        });
+                        post
+                          .save()
+                          .then((post) => {
+                            const series = new Series({
+                              name: seriesName,
+                              posts: {
+                                postId: post._id,
+                                title: post.title,
+                              },
+                              creator: req.user._id,
+                            });
+                            series
+                              .save()
+                              .then((series) => {
+                                series.populate("posts");
+                                post.series = series._id;
+                                post
+                                  .save()
+                                  .then((post) => {
+                                    user.series.push(series._id);
+                                    user.posts.push(post._id);
+                                    user.save().then((user) => {
+                                      res
+                                        .status(200)
+                                        .redirect("/blog/post/" + post._id);
+                                    });
+                                  })
+
+                                  .catch((err) => {
+                                    console.log(err);
+                                    if (!err.statusCode) {
+                                      err.statusCode = 500;
+                                    }
+                                    next(err);
+                                  });
+                              })
+                              .catch((err) => {
+                                console.log(err);
+                                if (!err.statusCode) {
+                                  err.statusCode = 500;
+                                }
+                                next(err);
+                              });
+                          })
+                          .catch((err) => {
+                            console.log(err);
+                            if (!err.statusCode) {
+                              err.statusCode = 500;
+                            }
+                            next(err);
+                          });
+                      })
+                      .catch((err) => {
+                        if (!err.statusCode) {
+                          err.statusCode = 500;
+                        }
+                        next(err);
+                      });
 
                     // const s3 = new AWS.S3({
                     //   accessKeyId: process.env.AWS_ACCESS_KEY,
@@ -615,64 +710,6 @@ exports.postCreatePost = async (req, res, next) => {
                     //   // imageUrl = `/img/${data.Key}`;
 
                     // });
-                    post = new Post({
-                      title,
-                      description,
-                      coverImgUrl: imageUrl,
-                      creator: req.user._id,
-                      publish,
-                    });
-                    post
-                      .save()
-                      .then((post) => {
-                        const series = new Series({
-                          name: seriesName,
-                          posts: {
-                            postId: post._id,
-                            title: post.title,
-                          },
-                          creator: req.user._id,
-                        });
-                        series
-                          .save()
-                          .then((series) => {
-                            series.populate("posts");
-                            post.series = series._id;
-                            post
-                              .save()
-                              .then((post) => {
-                                user.series.push(series._id);
-                                user.posts.push(post._id);
-                                user.save().then((user) => {
-                                  res
-                                    .status(200)
-                                    .redirect("/blog/post/" + post._id);
-                                });
-                              })
-
-                              .catch((err) => {
-                                console.log(err);
-                                if (!err.statusCode) {
-                                  err.statusCode = 500;
-                                }
-                                next(err);
-                              });
-                          })
-                          .catch((err) => {
-                            console.log(err);
-                            if (!err.statusCode) {
-                              err.statusCode = 500;
-                            }
-                            next(err);
-                          });
-                      })
-                      .catch((err) => {
-                        console.log(err);
-                        if (!err.statusCode) {
-                          err.statusCode = 500;
-                        }
-                        next(err);
-                      });
                   } else {
                     post = new Post({
                       title,
@@ -734,7 +771,86 @@ exports.postCreatePost = async (req, res, next) => {
                   }
                 } else {
                   if (req.file) {
-                    let imageUrl = req.file.path;
+                    let imagePath = req.file.path;
+
+                    uploadImagesToCloudinary(imagePath, "FaceBlogsPostsImages")
+                      .then((imgUrl) => {
+                        fs.unlink(imagePath, (err) => {
+                          if (err) {
+                            console.log(err);
+                          }
+                        });
+
+                        post = new Post({
+                          title,
+                          description,
+                          coverImgUrl: imgUrl.imageUrl,
+                          creator: req.user._id,
+                          publish,
+                        });
+                        post
+                          .save()
+                          .then((post) => {
+                            Series.findOne({ _id: oldSeries })
+                              .then((seriesData) => {
+                                if (!seriesData) {
+                                  const err = new Error(
+                                    "The Series in whichn you are trying to add post doesn't exists!"
+                                  );
+                                  err.oldDetails = req.body;
+                                  err.statusCode = 404;
+                                  throw err;
+                                }
+                                seriesData.posts.push({
+                                  postId: post._id,
+                                  title: post.title,
+                                });
+                                return seriesData.save();
+                              })
+                              .then((ser) => {
+                                ser.populate("posts");
+                                post.series = ser._id;
+                                post
+                                  .save()
+                                  .then((post) => {
+                                    user.posts.push(post._id);
+                                    return user.save();
+                                  })
+                                  .then((user) => {
+                                    res
+                                      .status(200)
+                                      .redirect("/blog/post/" + post._id);
+                                  })
+                                  .catch((err) => {
+                                    console.log(err);
+                                    if (!err.statusCode) {
+                                      err.statusCode = 500;
+                                    }
+                                    next(err);
+                                  });
+                              })
+                              .catch((err) => {
+                                console.log(err);
+                                if (!err.statusCode) {
+                                  err.statusCode = 500;
+                                }
+                                next(err);
+                              });
+                          })
+                          .catch((err) => {
+                            console.log(err);
+                            if (!err.statusCode) {
+                              err.statusCode = 500;
+                            }
+                            next(err);
+                          });
+                      })
+                      .catch((err) => {
+                        if (!err.statusCode) {
+                          err.statusCode = 500;
+                        }
+                        next(err);
+                      });
 
                     // const s3 = new AWS.S3({
                     //   accessKeyId: process.env.AWS_ACCESS_KEY,
@@ -762,69 +878,6 @@ exports.postCreatePost = async (req, res, next) => {
                     //   // imageUrl = `/img/${data.Key}`;
 
                     // });
-                    post = new Post({
-                      title,
-                      description,
-                      coverImgUrl: imageUrl,
-                      creator: req.user._id,
-                      publish,
-                    });
-                    post
-                      .save()
-                      .then((post) => {
-                        Series.findOne({ _id: oldSeries })
-                          .then((seriesData) => {
-                            if (!seriesData) {
-                              const err = new Error(
-                                "The Series in whichn you are trying to add post doesn't exists!"
-                              );
-                              err.oldDetails = req.body;
-                              err.statusCode = 404;
-                              throw err;
-                            }
-                            seriesData.posts.push({
-                              postId: post._id,
-                              title: post.title,
-                            });
-                            return seriesData.save();
-                          })
-                          .then((ser) => {
-                            ser.populate("posts");
-                            post.series = ser._id;
-                            post
-                              .save()
-                              .then((post) => {
-                                user.posts.push(post._id);
-                                return user.save();
-                              })
-                              .then((user) => {
-                                res
-                                  .status(200)
-                                  .redirect("/blog/post/" + post._id);
-                              })
-                              .catch((err) => {
-                                console.log(err);
-                                if (!err.statusCode) {
-                                  err.statusCode = 500;
-                                }
-                                next(err);
-                              });
-                          })
-                          .catch((err) => {
-                            console.log(err);
-                            if (!err.statusCode) {
-                              err.statusCode = 500;
-                            }
-                            next(err);
-                          });
-                      })
-                      .catch((err) => {
-                        console.log(err);
-                        if (!err.statusCode) {
-                          err.statusCode = 500;
-                        }
-                        next(err);
-                      });
                   } else {
                     post = new Post({
                       title,
@@ -929,7 +982,7 @@ exports.getPost = (req, res, next) => {
   Post.findOne({ _id: postId })
     .populate(["series", "creator"])
     .then((post) => {
-      console.log(post);
+      // console.log(post);
       if (!post) {
         const err = new Error("Post With that Post Id doesn't exists!");
         err.statusCode = 404;

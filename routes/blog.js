@@ -31,9 +31,9 @@ router.post(
   "/new",
   [
     body("imageUrl").custom((val, { req }) => {
-      console.log(req.file);
+      // console.log(req.file);
       if (req.file.size > 2097152) {
-        console.log(req.file.size);
+        // console.log(req.file.size);
         throw new Error("File Size shouldn't exceed 2mb");
       }
       return true;

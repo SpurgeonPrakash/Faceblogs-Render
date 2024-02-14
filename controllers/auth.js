@@ -10,6 +10,8 @@ const isUserUnique = require("../util/isUserUnique");
 const sendMail = require("../util/sendMail");
 const User = require("../models/user");
 const Post = require("../models/post");
+const uploadImagesToCloudinary = require("../util/cloudinary");
+const fs = require("fs");
 
 exports.getSignup = (req, res, next) => {
   res.status(200).render("auth/signup", {
@@ -76,20 +78,38 @@ exports.postSignup = (req, res, next) => {
 
       // });
       // imageUrl = `/img/${data.Key}`;
-      imageUrl = req.file.path;
-      user = new User({
-        email,
-        password: hashedPassword,
-        userName: userName.toLowerCase(),
-        firstName,
-        lastName,
-        imageUrl: imageUrl,
-        occupation,
-      });
-      user
-        .save()
-        .then((user) => {
-          res.redirect(`/auth/send/confirmation/${user.email}`);
+      const imagePath = req.file.path;
+      uploadImagesToCloudinary(imagePath, "FaceBlogsUsersImages")
+        .then((imgUrl) => {
+          console.log("Uploading User Image was Successfull");
+          imageUrl = imgUrl.imageUrl;
+          console.log(imageUrl);
+          fs.unlink(imagePath, (err) => {
+            if (err) {
+              console.log(err);
+            }
+          });
+
+          user = new User({
+            email,
+            password: hashedPassword,
+            userName: userName.toLowerCase(),
+            firstName,
+            lastName,
+            imageUrl: imageUrl,
+            occupation,
+          });
+          user
+            .save()
+            .then((user) => {
+              res.redirect(`/auth/send/confirmation/${user.email}`);
+            })
+            .catch((err) => {
+              if (!err.statusCode) {
+                err.statusCode = 500;
+              }
+              next(err);
+            });
         })
         .catch((err) => {
           if (!err.statusCode) {
@@ -161,7 +181,7 @@ exports.sendConfirmMail = async (req, res, next) => {
               <p>You Signed Up Successfully, Please </p>
               <p>Click this <a href="${process.env.HOST}/auth/confirm/${user._id}/${token}">LINK</a> to confirm Your Account</p>
             `;
-          console.log(mailContent);
+          // console.log(mailContent);
           sendMail(user.email, mailSubject, mailContent);
           res.status(201).render("confirmation/status", {
             email: user.email,
@@ -205,7 +225,6 @@ exports.confirmEmail = async (req, res, next) => {
       const error = new Error("No Error Found!!");
       throw error;
     }
-    console.log("user", req.user);
     user.confirmedUser = true;
     user.confirmToken = undefined;
     user.confirmTokenExpiration = undefined;

@@ -65,7 +65,7 @@
                                 <a href="#">
                                     <img 
                                         class="coverImg" 
-                                        src="/<%= post.coverImgUrl %>" 
+                                        src="<%= post.coverImgUrl %>" 
                                         alt="post_cover_image"
                                     />
                                 </a>
@@ -73,8 +73,8 @@
                             <div class="postContent">
                                 <div class="creator">
                                     <% if(post.creator.imageUrl) { %>
-                                        <% console.log(post.creator.imageUrl) %>
-                                        <div class="creator_badge"><img class="creator_img" src="/<%= post.creator.imageUrl %>" alt="creator_profile_pic"></div>
+                                        <!-- <% console.log(post.creator.imageUrl) %> -->
+                                        <div class="creator_badge"><img class="creator_img" src="<%= post.creator.imageUrl %>" alt="creator_profile_pic"></div>
                                     <% } else {%> 
                                         <div class="creator_badge"><img class="creator_img" src="/images/profile_default.jpg" alt="creator_profile_pic"></div>
                                     <% } %> 

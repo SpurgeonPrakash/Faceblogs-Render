@@ -71,7 +71,7 @@
                     <div class="postContainerContent">
                         <% if(postDetails.coverImgUrl) { %>
                             <div class="coverImg">
-                                <img src="/<%= postDetails.coverImgUrl %>" alt="cover_image">
+                                <img src="<%= postDetails.coverImgUrl %>" alt="cover_image">
                             </div>
                         <% } %>
                         <div class="postMainContentContainer">
@@ -80,8 +80,8 @@
                             </div>
                             <div class="creator postCreatorContent">
                                 <% if(postDetails.creator.imageUrl) { %>
-                                    <% console.log(postDetails.creator.imageUrl) %>
-                                    <div class="creator_badge"><img class="creator_img" src="/<%= postDetails.creator.imageUrl %>" alt="creator_profile_pic"></div>
+                                    <!-- <% console.log(postDetails.creator.imageUrl) %> -->
+                                    <div class="creator_badge"><img class="creator_img" src="<%= postDetails.creator.imageUrl %>" alt="creator_profile_pic"></div>
                                 <% } else {%> 
                                     <div class="creator_badge"><img class="creator_img" src="/images/profile_default.jpg" alt="creator_profile_pic"></div>
                                 <% } %> 
@@ -156,7 +156,7 @@
                                     <div class="createPostComment">
                                         <div class="commentsProfileIcon">
                                             <% if(profilePicUrl) { %>
-                                                <a href="#"><img src="/<%= profilePicUrl %>" alt=""></a>
+                                                <a href="#"><img src="<%= profilePicUrl %>" alt=""></a>
                                             <% } else { %>
                                                 <a href="#"><img src="/images/profile_default.jpg" alt=""></a>
                                             <% } %>
@@ -176,7 +176,7 @@
                                         <% const yearComment = new Date(comment.createdAt).getFullYear()%>
                                         <div class="commentsProfileIcon">
                                             <% if(comment.userId.imageUrl) { %>
-                                                <a href="#"><img src="/<%= comment.userId.imageUrl %>" alt=""></a>
+                                                <a href="#"><img src="<%= comment.userId.imageUrl %>" alt=""></a>
                                             <% } else { %>
                                                 <a href="#"><img src="/images/profile_default.jpg" alt="creator_pic"></a>
                                             <% } %>
@@ -223,7 +223,7 @@
                     <div class="creatorDetailsContent">
                         <div class="postUserProfileIcon">
                             <% if(postDetails.creator.imageUrl) { %>
-                                <a href="#"><img src="/<%= postDetails.creator.imageUrl %>" alt=""></a>
+                                <a href="#"><img src="<%= postDetails.creator.imageUrl %>" alt=""></a>
                             <% } else { %>
                                 <a href="#"><img src="/images/profile_default.jpg" alt="creator_pic"></a>
                             <% } %>
