@@ -50,6 +50,9 @@
   text-decoration: none;
 }
 
+.changeHeight {
+  /* height: 300px; */
+}
 .social-section {
   /* background-color: lightgreen; */
   display: flex;
@@ -297,8 +300,9 @@
 .formSection .ui-description {
   border: none;
   font-size: 1.3rem;
-  overflow: hidden;
+  overflow: auto;
   width: 100%;
+  min-height: 300px;
 }
 
 .formSection .ui-title:focus,
