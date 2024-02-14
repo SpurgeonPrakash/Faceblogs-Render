@@ -81,9 +81,7 @@ exports.postSignup = (req, res, next) => {
       const imagePath = req.file.path;
       uploadImagesToCloudinary(imagePath, "FaceBlogsUsersImages")
         .then((imgUrl) => {
-          console.log("Uploading User Image was Successfull");
           imageUrl = imgUrl.imageUrl;
-          console.log(imageUrl);
           fs.unlink(imagePath, (err) => {
             if (err) {
               console.log(err);
