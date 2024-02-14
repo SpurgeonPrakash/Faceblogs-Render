@@ -113,7 +113,7 @@ app.use(async (req, res, next) => {
       ],
     },
     { pro: false, publish: false }
-  ).limit(5);
+  ).limit(23);
 
   req.featuredPosts = featuredPosts;
   next();
